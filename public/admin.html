@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Админ-панель — Расписание</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+
+    <div id="loginView" class="flex flex-col items-center justify-center min-h-[60vh]">
+      <h1 class="text-2xl font-bold mb-6">🔐 Вход в админ-панель</h1>
+      <button id="btnLogin" class="bg-white border shadow-sm rounded-lg px-5 py-3 font-medium hover:bg-slate-100">
+        Войти через Google
+      </button>
+      <p id="loginError" class="text-red-600 mt-4 text-sm"></p>
+    </div>
+
+    <div id="adminView" class="hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">🛠 Панель администратора</h1>
+        <button id="btnLogout" class="text-sm text-slate-500 hover:text-slate-800">Выйти</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl border shadow-sm p-5">
+          <h2 class="font-semibold mb-3">Импорт расписания (.xlsx)</h2>
+          <p class="text-sm text-slate-500 mb-3">
+            Файл-шаблон: колонки group_name, day_of_week (1-6), lesson_number, subject_name, teacher, room.
+          </p>
+          <input id="fileInput" type="file" accept=".xlsx" class="block w-full text-sm mb-4" />
+          <button id="btnUpload" class="w-full bg-indigo-600 text-white rounded-lg py-2 font-medium hover:bg-indigo-700">
+            Загрузить и обновить базу
+          </button>
+          <p id="uploadStatus" class="text-sm mt-3"></p>
+        </div>
+
+        <div class="bg-white rounded-xl border shadow-sm p-5">
+          <h2 class="font-semibold mb-3">Кто вы</h2>
+          <p id="whoami" class="text-sm text-slate-600 break-all"></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    // Список email-ов, которым разрешён вход в админку
+    const ADMIN_EMAILS = ['your-admin-email@gmail.com'];
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginView = document.getElementById('loginView');
+    const adminView = document.getElementById('adminView');
+    const loginError = document.getElementById('loginError');
+
+    async function loginWithGoogle() {
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/admin.html' }
+      });
+    }
+
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        loginView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        return;
+      }
+      const email = session.user.email;
+      if (!ADMIN_EMAILS.includes(email)) {
+        loginError.textContent = `Доступ запрещён для ${email}`;
+        await supabase.auth.signOut();
+        loginView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        return;
+      }
+      document.getElementById('whoami').textContent = email;
+      loginView.classList.add('hidden');
+      adminView.classList.remove('hidden');
+    }
+
+    document.getElementById('btnLogin').addEventListener('click', loginWithGoogle);
+    document.getElementById('btnLogout').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      checkSession();
+    });
+
+    document.getElementById('btnUpload').addEventListener('click', async () => {
+      const fileInput = document.getElementById('fileInput');
+      const status = document.getElementById('uploadStatus');
+      if (!fileInput.files.length) { status.textContent = 'Выберите файл.'; return; }
+
+      status.textContent = 'Загрузка...';
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const res = await fetch('/api/import-schedule', { method: 'POST', body: formData });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Ошибка сервера');
+        status.textContent = `✅ ${json.message} (строк: ${json.rows})`;
+        status.className = 'text-sm mt-3 text-emerald-600';
+      } catch (err) {
+        status.textContent = `❌ ${err.message}`;
+        status.className = 'text-sm mt-3 text-red-600';
+      }
+    });
+
+    checkSession();
+  </script>
+</body>
+</html>

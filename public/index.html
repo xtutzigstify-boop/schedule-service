@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Расписание</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+  <div class="max-w-xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">📅 Расписание занятий</h1>
+
+    <label class="block text-sm font-medium mb-1">Группа</label>
+    <select id="groupSelect" class="w-full border rounded-lg px-3 py-2 mb-4 bg-white">
+      <option value="">Загрузка групп...</option>
+    </select>
+
+    <div class="flex gap-3 mb-6">
+      <button id="btnToday" class="flex-1 bg-indigo-600 text-white rounded-lg py-2 font-medium hover:bg-indigo-700">Сегодня</button>
+      <button id="btnNow" class="flex-1 bg-emerald-600 text-white rounded-lg py-2 font-medium hover:bg-emerald-700">Сейчас</button>
+    </div>
+
+    <div id="result" class="bg-white rounded-xl shadow-sm border p-4 min-h-[80px] whitespace-pre-line"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const DAYS = ['', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+
+    const groupSelect = document.getElementById('groupSelect');
+    const result = document.getElementById('result');
+    let bells = {};
+
+    async function loadBells() {
+      const res = await fetch('/bells.json');
+      bells = await res.json();
+    }
+
+    async function loadGroups() {
+      const { data, error } = await supabase.from('groups').select('id,name').order('name');
+      if (error) {
+        groupSelect.innerHTML = `<option value="">Ошибка загрузки групп</option>`;
+        return;
+      }
+      groupSelect.innerHTML = data.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    }
+
+    function timeToMinutes(t) {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    async function showToday() {
+      const groupId = groupSelect.value;
+      if (!groupId) { result.textContent = 'Выберите группу'; return; }
+      const jsDay = new Date().getDay(); // 0=Вс..6=Сб
+      const dayOfWeek = jsDay === 0 ? 7 : jsDay; // приведём к 1..7, но у нас 1..6 (Пн..Сб)
+      if (dayOfWeek === 7) { result.textContent = 'Сегодня воскресенье — пар нет 🎉'; return; }
+
+      const { data, error } = await supabase
+        .from('schedule')
+        .select('lesson_number, subject_name, teacher, room, time_start, time_end')
+        .eq('group_id', groupId)
+        .eq('day_of_week', dayOfWeek)
+        .order('lesson_number');
+
+      if (error || !data || data.length === 0) {
+        result.textContent = 'На сегодня пар не найдено.';
+        return;
+      }
+
+      result.textContent = `${DAYS[dayOfWeek]}:\n` + data.map(l =>
+        `${l.lesson_number} пара (${l.time_start.slice(0,5)}–${l.time_end.slice(0,5)}): ${l.subject_name}${l.teacher ? ' — ' + l.teacher : ''}${l.room ? ' [' + l.room + ']' : ''}`
+      ).join('\n');
+    }
+
+    async function showNow() {
+      const groupId = groupSelect.value;
+      if (!groupId) { result.textContent = 'Выберите группу'; return; }
+      const now = new Date();
+      const jsDay = now.getDay();
+      const dayOfWeek = jsDay === 0 ? 7 : jsDay;
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      if (dayOfWeek === 7) { result.textContent = 'Сегодня воскресенье — пар нет 🎉'; return; }
+
+      const { data, error } = await supabase
+        .from('schedule')
+        .select('lesson_number, subject_name, teacher, room, time_start, time_end')
+        .eq('group_id', groupId)
+        .eq('day_of_week', dayOfWeek)
+        .order('lesson_number');
+
+      if (error || !data || data.length === 0) {
+        result.textContent = 'На сегодня пар не найдено.';
+        return;
+      }
+
+      for (const l of data) {
+        const start = timeToMinutes(l.time_start.slice(0,5));
+        const end = timeToMinutes(l.time_end.slice(0,5));
+        if (nowMinutes >= start && nowMinutes <= end) {
+          result.textContent = `Сейчас идёт ${l.lesson_number} пара: ${l.subject_name} (${l.time_start.slice(0,5)}–${l.time_end.slice(0,5)})`;
+          return;
+        }
+      }
+
+      const next = data.find(l => timeToMinutes(l.time_start.slice(0,5)) > nowMinutes);
+      if (next) {
+        result.textContent = `Сейчас перемена. Следующая пара в ${next.time_start.slice(0,5)}: ${next.subject_name}`;
+      } else {
+        result.textContent = 'На сегодня все пары закончились.';
+      }
+    }
+
+    document.getElementById('btnToday').addEventListener('click', showToday);
+    document.getElementById('btnNow').addEventListener('click', showNow);
+
+    loadBells();
+    loadGroups();
+  </script>
+</body>
+</html>
