@@ -1,128 +1,168 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Расписание</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Расписание ПО-33</title>
+<style>
+:root{--bg1:#0b1026;--bg2:#1d1a52;--acc:#8b6bff;--acc2:#22d3ee;--txt:#eef0ff;--mut:#a9b0d6;--card:rgba(255,255,255,.07);--line:rgba(255,255,255,.14);--bub:rgba(255,255,255,.09)}
+[data-theme=sunset]{--bg1:#2a0e2e;--bg2:#7a2350;--acc:#ff7a59;--acc2:#ffd166}
+[data-theme=forest]{--bg1:#04140f;--bg2:#0f4a38;--acc:#34d399;--acc2:#bef264}
+[data-theme=sakura]{--bg1:#fff1f6;--bg2:#ffc9dd;--acc:#ec4899;--acc2:#8b5cf6;--txt:#3b1030;--mut:#7d4a6c;--card:rgba(255,255,255,.6);--line:rgba(120,40,90,.18);--bub:rgba(255,255,255,.75)}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--txt);background:linear-gradient(140deg,var(--bg1),var(--bg2));background-attachment:fixed;overflow-x:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);transition:background .6s}
+.bg{position:fixed;inset:0;overflow:hidden;perspective:900px;pointer-events:none;z-index:0}
+.blob{position:absolute;width:46vmax;height:46vmax;border-radius:50%;filter:blur(70px);opacity:.45;animation:drift 18s ease-in-out infinite alternate}
+.b1{background:var(--acc);top:-15vmax;left:-10vmax}.b2{background:var(--acc2);bottom:-18vmax;right:-12vmax;animation-delay:-9s}
+@keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.15)}}
+.cube{position:absolute;width:var(--s);height:var(--s);transform-style:preserve-3d;animation:spin var(--t) linear infinite,float var(--f) ease-in-out infinite alternate}
+.cube i{position:absolute;inset:0;border:1.5px solid var(--acc2);background:color-mix(in srgb,var(--acc) 14%,transparent);border-radius:8px;opacity:.7}
+.cube i:nth-child(1){transform:translateZ(calc(var(--s)/2))}.cube i:nth-child(2){transform:rotateY(180deg) translateZ(calc(var(--s)/2))}
+.cube i:nth-child(3){transform:rotateY(90deg) translateZ(calc(var(--s)/2))}.cube i:nth-child(4){transform:rotateY(-90deg) translateZ(calc(var(--s)/2))}
+.cube i:nth-child(5){transform:rotateX(90deg) translateZ(calc(var(--s)/2))}.cube i:nth-child(6){transform:rotateX(-90deg) translateZ(calc(var(--s)/2))}
+@keyframes spin{to{transform:rotateX(360deg) rotateY(720deg)}}
+@keyframes float{to{translate:0 -40px}}
+header,main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:0 16px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:18px;padding-bottom:10px}
+.logo{font-weight:800;font-size:1.25rem;letter-spacing:.3px;margin-right:auto;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.themes{display:flex;gap:8px}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);cursor:pointer;transition:transform .25s}
+.dot:hover,.dot.on{transform:scale(1.25) rotate(20deg);border-color:var(--txt)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--txt);text-decoration:none;font-weight:600;font-size:.9rem;backdrop-filter:blur(10px);transition:transform .25s,box-shadow .25s}
+.pill:hover{transform:translateY(-3px) rotateX(12deg);box-shadow:0 10px 26px -8px var(--acc)}
+.pill.tg{background:linear-gradient(90deg,#2aabee,#229ed9);border:0;color:#fff}
+.stage{perspective:1200px;padding-top:12px;padding-bottom:30px}
+.tilt{transform-style:preserve-3d;transition:transform .25s ease-out;will-change:transform}
+.chat{display:flex;flex-direction:column;height:min(78vh,720px);border-radius:26px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(22px);box-shadow:0 40px 80px -30px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04) inset;overflow:hidden}
+.top{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);transform:translateZ(30px)}
+.ava{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:1.3rem;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 8px 20px -6px var(--acc);animation:bob 3s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px) rotate(-6deg)}}
+.top h1{font-size:1.05rem}.top small{color:var(--mut)}
+select{margin-left:auto;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bub);color:var(--txt);font:inherit;max-width:46%}
+select option{color:#111}
+#log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+.m{max-width:88%;padding:11px 14px;border-radius:18px;background:var(--bub);animation:pop .45s cubic-bezier(.2,1.4,.4,1) both;transform-origin:left bottom}
+.m.me{align-self:flex-end;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;transform-origin:right bottom;font-weight:600}
+@keyframes pop{from{opacity:0;transform:perspective(600px) rotateX(-40deg) scale(.85)}}
+.day{font-weight:800;margin-bottom:8px}
+.lesson{display:flex;gap:12px;align-items:center;padding:10px;border-radius:14px;border:1px solid var(--line);margin-top:8px;background:var(--card);animation:flip .6s both;animation-delay:calc(var(--i)*90ms);transition:transform .3s,box-shadow .3s}
+.lesson:hover{transform:perspective(600px) rotateY(-6deg) translateZ(10px);box-shadow:0 14px 30px -14px var(--acc)}
+@keyframes flip{from{opacity:0;transform:perspective(700px) rotateX(-75deg) translateY(-14px)}}
+.lesson b{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff}
+.lesson h4{font-size:.95rem;line-height:1.25}.lesson p{font-size:.8rem;color:var(--mut)}
+.lesson.now{border-color:var(--acc2);box-shadow:0 0 0 2px var(--acc2),0 0 28px -6px var(--acc2);animation:flip .6s both,glow 2s ease-in-out infinite alternate}
+@keyframes glow{to{box-shadow:0 0 0 2px var(--acc2),0 0 40px 0 var(--acc2)}}
+.bar{height:6px;border-radius:9px;background:var(--line);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:9px}
+.typing span{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:var(--mut);animation:tp 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes tp{50%{transform:translateY(-6px);background:var(--acc2)}}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 16px 0;transform:translateZ(20px)}
+.chip{flex:none;padding:9px 15px;border-radius:999px;border:1px solid var(--line);background:var(--bub);color:var(--txt);font:inherit;font-weight:600;cursor:pointer;transition:transform .25s,background .25s}
+.chip:hover,.chip:active{transform:translateY(-3px) rotateX(15deg);background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff}
+form{display:flex;gap:10px;padding:12px 16px 16px}
+input{flex:1;min-width:0;padding:13px 16px;border-radius:14px;border:1px solid var(--line);background:var(--bub);color:var(--txt);font:inherit;outline:none}
+input:focus{border-color:var(--acc2);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc2) 30%,transparent)}
+form button{padding:0 20px;border:0;border-radius:14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--acc),var(--acc2));transition:transform .2s}
+form button:active{transform:scale(.93)}
+@media(max-width:560px){.top small{display:none}.chat{height:calc(100vh - 150px);border-radius:20px}.pill{padding:8px 11px;font-size:.82rem}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
-  <div class="max-w-xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-6">📅 Расписание занятий</h1>
-
-    <label class="block text-sm font-medium mb-1">Группа</label>
-    <select id="groupSelect" class="w-full border rounded-lg px-3 py-2 mb-4 bg-white">
-      <option value="">Загрузка групп...</option>
-    </select>
-
-    <div class="flex gap-3 mb-6">
-      <button id="btnToday" class="flex-1 bg-indigo-600 text-white rounded-lg py-2 font-medium hover:bg-indigo-700">Сегодня</button>
-      <button id="btnNow" class="flex-1 bg-emerald-600 text-white rounded-lg py-2 font-medium hover:bg-emerald-700">Сейчас</button>
-    </div>
-
-    <div id="result" class="bg-white rounded-xl shadow-sm border p-4 min-h-[80px] whitespace-pre-line"></div>
+<body data-theme="midnight">
+<div class="bg"><div class="blob b1"></div><div class="blob b2"></div></div>
+<header>
+  <div class="logo">◆ РАСПИСАНИЕ</div>
+  <div class="themes" id="themes"></div>
+  <a class="pill tg" href="https://t.me/Raspisanie0228_bot" target="_blank" rel="noopener">✈ Telegram-бот</a>
+  <a class="pill" href="/admin.html">🔐 Админ · Google</a>
+</header>
+<main class="stage" id="stage">
+  <div class="tilt" id="tilt">
+    <section class="chat">
+      <div class="top">
+        <div class="ava">📅</div>
+        <div><h1>Бот расписания</h1><small>онлайн · данные из Supabase</small></div>
+        <select id="group" aria-label="Группа"><option>Загрузка…</option></select>
+      </div>
+      <div id="log"></div>
+      <div class="chips">
+        <button class="chip" data-c="/today">📆 /today</button>
+        <button class="chip" data-c="/now">⏱ /now</button>
+        <button class="chip" data-c="/week">🗓 /week</button>
+        <button class="chip" data-c="/help">❔ /help</button>
+      </div>
+      <form id="f"><input id="in" placeholder="Напиши /today или /now" autocomplete="off"><button>➤</button></form>
+    </section>
   </div>
+</main>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Только https://xxxxx.supabase.co — БЕЗ /rest/v1/ на конце!
+const SUPABASE_URL = 'https://fsrihcycggwitxdpwzpd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzcmloY3ljZ2d3aXR4ZHB3enBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTkyMTgsImV4cCI6MjEwNTgzNTIxOH0.ZGWk7aSWanz31EgkmMIPaOh4eUTG1I8mybABSXO2L5k';
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const DAYS = ['','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+const $ = id => document.getElementById(id), log = $('log'), sel = $('group');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hm = t => t.slice(0,5), mins = t => { const [h,m] = t.split(':'); return +h*60 + +m; };
+const store = { get:k=>{try{return localStorage.getItem(k)}catch(e){return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}} };
 
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+/* темы */
+const THEMES = { midnight:'#8b6bff', sunset:'#ff7a59', forest:'#34d399', sakura:'#ec4899' };
+function setTheme(t){ document.body.dataset.theme = t; store.set('theme', t); [...$('themes').children].forEach(d => d.classList.toggle('on', d.dataset.t === t)); }
+Object.entries(THEMES).forEach(([t,c]) => { const d = document.createElement('div'); d.className='dot'; d.dataset.t=t; d.title=t; d.style.background=c; d.onclick=()=>setTheme(t); $('themes').append(d); });
+setTheme(store.get('theme') || 'midnight');
 
-    const SUPABASE_URL = 'https://fsrihcycggwitxdpwzpd.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzcmloY3ljZ2d3aXR4ZHB3enBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTkyMTgsImV4cCI6MjEwNTgzNTIxOH0.ZGWk7aSWanz31EgkmMIPaOh4eUTG1I8mybABSXO2L5k';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* 3D-кубы на фоне */
+const bg = document.querySelector('.bg');
+for (let i=0;i<7;i++){ const c=document.createElement('div'); c.className='cube'; const s=28+Math.random()*52;
+  c.style.cssText=`--s:${s}px;--t:${14+Math.random()*16}s;--f:${4+Math.random()*4}s;left:${Math.random()*92}%;top:${Math.random()*88}%`;
+  c.innerHTML='<i></i><i></i><i></i><i></i><i></i><i></i>'; bg.append(c); }
 
-    const DAYS = ['', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+/* наклон карточки за курсором */
+const stage=$('stage'), tilt=$('tilt');
+stage.addEventListener('pointermove', e => { if(e.pointerType==='touch')return; const r=stage.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; tilt.style.transform=`rotateY(${x*9}deg) rotateX(${-y*7}deg)`; });
+stage.addEventListener('pointerleave', () => tilt.style.transform='');
 
-    const groupSelect = document.getElementById('groupSelect');
-    const result = document.getElementById('result');
-    let bells = {};
+/* чат */
+function say(html, me){ const d=document.createElement('div'); d.className='m'+(me?' me':''); d.innerHTML=html; log.append(d); log.scrollTop=log.scrollHeight; return d; }
+async function reply(fn){ const t=say('<span class="typing"><span></span><span></span><span></span></span>'); await new Promise(r=>setTimeout(r,450)); t.remove(); say(await fn()); }
+const dow = () => { const d=new Date().getDay(); return d===0?7:d; };
+async function lessons(day){ let q=sb.from('schedule').select('day_of_week,lesson_number,subject_name,teacher,room,time_start,time_end').eq('group_id',sel.value).order('day_of_week').order('lesson_number'); if(day) q=q.eq('day_of_week',day); const {data,error}=await q; if(error) throw error; return data||[]; }
+function card(l,i,now){ const on=now&&mins(hm(l.time_start))<=now&&now<=mins(hm(l.time_end)); let bar='';
+  if(on){ const a=mins(hm(l.time_start)),b=mins(hm(l.time_end)); bar=`<div class="bar"><i style="width:${Math.round((now-a)/(b-a)*100)}%"></i></div>`; }
+  return `<div class="lesson${on?' now':''}" style="--i:${i}"><b>${l.lesson_number}</b><div><h4>${esc(l.subject_name)}</h4><p>${hm(l.time_start)}–${hm(l.time_end)}${l.teacher?' · '+esc(l.teacher):''}${l.room?' · каб. '+esc(l.room):''}</p>${bar}</div></div>`; }
+const cmds = {
+  async '/today'(){ const d=dow(); if(d===7) return 'Сегодня воскресенье — пар нет 🎉'; const L=await lessons(d);
+    return L.length ? `<div class="day">📆 ${DAYS[d]}</div>`+L.map((l,i)=>card(l,i)).join('') : 'На сегодня пар не найдено.'; },
+  async '/now'(){ const d=dow(); if(d===7) return 'Сегодня воскресенье — пар нет 🎉'; const L=await lessons(d); if(!L.length) return 'На сегодня пар не найдено.';
+    const n=new Date(), now=n.getHours()*60+n.getMinutes(), cur=L.find(l=>mins(hm(l.time_start))<=now&&now<=mins(hm(l.time_end)));
+    if(cur) return `⏱ Сейчас идёт ${cur.lesson_number} пара: <b>${esc(cur.subject_name)}</b> (${hm(cur.time_start)}–${hm(cur.time_end)})`+card(cur,0,now);
+    const nx=L.find(l=>mins(hm(l.time_start))>now); return nx ? `☕ Сейчас перемена. Следующая пара в <b>${hm(nx.time_start)}</b>: ${esc(nx.subject_name)}` : '🌙 На сегодня все пары закончились.'; },
+  async '/week'(){ const L=await lessons(); if(!L.length) return 'Расписание пока не загружено.'; let h='',i=0;
+    for(let d=1;d<=6;d++){ const D=L.filter(l=>l.day_of_week===d); if(D.length) h+=`<div class="day" style="margin-top:12px">${DAYS[d]}</div>`+D.map(l=>card(l,i++)).join(''); } return h; },
+  async '/help'(){ return 'Я умею:<br>📆 <b>/today</b> — пары на сегодня<br>⏱ <b>/now</b> — что идёт прямо сейчас<br>🗓 <b>/week</b> — вся неделя<br>Группу меняй в списке справа сверху.'; }
+};
+async function run(text){ const raw=text.trim(); if(!raw) return; say(esc(raw),true);
+  const alias={'сегодня':'/today','сейчас':'/now','неделя':'/week','помощь':'/help','/start':'/help'}; const c=alias[raw.toLowerCase()]||raw.toLowerCase();
+  if(!sel.value) return reply(async()=>'Сначала выбери группу в списке сверху.');
+  if(!cmds[c]) return reply(async()=>'Не знаю такую команду 🤔 Напиши <b>/help</b>.');
+  await reply(async()=>{ try{ return await cmds[c](); }catch(e){ return '⚠️ Ошибка связи с базой: '+esc(e.message); } }); }
+$('f').onsubmit = e => { e.preventDefault(); run($('in').value); $('in').value=''; };
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => run(b.dataset.c));
+sel.onchange = () => { store.set('group', sel.value); say('Группа: <b>'+esc(sel.selectedOptions[0].text)+'</b> ✅'); };
 
-    async function loadBells() {
-      const res = await fetch('/bells.json');
-      bells = await res.json();
-    }
-
-    async function loadGroups() {
-      const { data, error } = await supabase.from('groups').select('id,name').order('name');
-      if (error) {
-        groupSelect.innerHTML = `<option value="">Ошибка загрузки групп</option>`;
-        return;
-      }
-      groupSelect.innerHTML = data.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-    }
-
-    function timeToMinutes(t) {
-      const [h, m] = t.split(':').map(Number);
-      return h * 60 + m;
-    }
-
-    async function showToday() {
-      const groupId = groupSelect.value;
-      if (!groupId) { result.textContent = 'Выберите группу'; return; }
-      const jsDay = new Date().getDay(); // 0=Вс..6=Сб
-      const dayOfWeek = jsDay === 0 ? 7 : jsDay; // приведём к 1..7, но у нас 1..6 (Пн..Сб)
-      if (dayOfWeek === 7) { result.textContent = 'Сегодня воскресенье — пар нет 🎉'; return; }
-
-      const { data, error } = await supabase
-        .from('schedule')
-        .select('lesson_number, subject_name, teacher, room, time_start, time_end')
-        .eq('group_id', groupId)
-        .eq('day_of_week', dayOfWeek)
-        .order('lesson_number');
-
-      if (error || !data || data.length === 0) {
-        result.textContent = 'На сегодня пар не найдено.';
-        return;
-      }
-
-      result.textContent = `${DAYS[dayOfWeek]}:\n` + data.map(l =>
-        `${l.lesson_number} пара (${l.time_start.slice(0,5)}–${l.time_end.slice(0,5)}): ${l.subject_name}${l.teacher ? ' — ' + l.teacher : ''}${l.room ? ' [' + l.room + ']' : ''}`
-      ).join('\n');
-    }
-
-    async function showNow() {
-      const groupId = groupSelect.value;
-      if (!groupId) { result.textContent = 'Выберите группу'; return; }
-      const now = new Date();
-      const jsDay = now.getDay();
-      const dayOfWeek = jsDay === 0 ? 7 : jsDay;
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-      if (dayOfWeek === 7) { result.textContent = 'Сегодня воскресенье — пар нет 🎉'; return; }
-
-      const { data, error } = await supabase
-        .from('schedule')
-        .select('lesson_number, subject_name, teacher, room, time_start, time_end')
-        .eq('group_id', groupId)
-        .eq('day_of_week', dayOfWeek)
-        .order('lesson_number');
-
-      if (error || !data || data.length === 0) {
-        result.textContent = 'На сегодня пар не найдено.';
-        return;
-      }
-
-      for (const l of data) {
-        const start = timeToMinutes(l.time_start.slice(0,5));
-        const end = timeToMinutes(l.time_end.slice(0,5));
-        if (nowMinutes >= start && nowMinutes <= end) {
-          result.textContent = `Сейчас идёт ${l.lesson_number} пара: ${l.subject_name} (${l.time_start.slice(0,5)}–${l.time_end.slice(0,5)})`;
-          return;
-        }
-      }
-
-      const next = data.find(l => timeToMinutes(l.time_start.slice(0,5)) > nowMinutes);
-      if (next) {
-        result.textContent = `Сейчас перемена. Следующая пара в ${next.time_start.slice(0,5)}: ${next.subject_name}`;
-      } else {
-        result.textContent = 'На сегодня все пары закончились.';
-      }
-    }
-
-    document.getElementById('btnToday').addEventListener('click', showToday);
-    document.getElementById('btnNow').addEventListener('click', showNow);
-
-    loadBells();
-    loadGroups();
-  </script>
+(async () => {
+  say('Привет! 👋 Я показываю расписание из общей базы — то же самое, что и в Telegram-боте.');
+  const {data,error} = await sb.from('groups').select('id,name').order('name');
+  if(error||!data?.length){ sel.innerHTML='<option value="">нет групп</option>'; return say('⚠️ Не удалось загрузить группы. Проверь SUPABASE_URL и ключ.'); }
+  sel.innerHTML = data.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  const saved = store.get('group'); if(saved && data.some(g=>String(g.id)===saved)) sel.value=saved;
+  else { const my = data.find(g=>g.name==='ПО-33'); if(my) sel.value=my.id; }
+  say('Выбери команду внизу или напиши её сам. Подсказка: <b>/help</b>');
+})();
+</script>
 </body>
 </html>
