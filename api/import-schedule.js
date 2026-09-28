@@ -22,7 +22,7 @@ export const config = {
 
 function parseForm(req) {
   return new Promise((resolve, reject) => {
-    const form = formidable({ maxFileSize: 10 * 1024 * 1024 });
+    const form = formidable({ maxFileSize: 10 * 1024 * 1024, uploadDir: '/tmp', keepExtensions: true });
     form.parse(req, (err, fields, files) => {
       if (err) reject(err);
       else resolve({ fields, files });
